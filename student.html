@@ -41,51 +41,63 @@
         }
 
         .header h1 {
+            margin: 0;
             font-size: 24px;
-            margin-bottom: 10px;
         }
 
         .status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
         }
 
         .connection-status {
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 12px;
         }
 
         .status-dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: #ff4757;
+            transition: background 0.3s;
         }
 
         .status-dot.connected {
             background: #2ed573;
         }
 
+        #classroomInfo {
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
         .login-form {
-            padding: 40px;
-            text-align: center;
             flex: 1;
+            padding: 40px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
         }
 
         .login-form h2 {
             margin-bottom: 30px;
             color: #333;
+            text-align: center;
         }
 
         .form-group {
+            width: 100%;
+            max-width: 300px;
             margin-bottom: 20px;
-            text-align: left;
         }
 
         .form-group label {
@@ -97,15 +109,15 @@
 
         .form-group input {
             width: 100%;
-            padding: 12px;
+            padding: 12px 16px;
             border: 2px solid #e1e8ed;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 14px;
+            outline: none;
             transition: border-color 0.3s;
         }
 
         .form-group input:focus {
-            outline: none;
             border-color: #4facfe;
         }
 
@@ -115,9 +127,10 @@
             border: none;
             padding: 12px 30px;
             border-radius: 25px;
-            font-size: 16px;
             cursor: pointer;
+            font-size: 16px;
             transition: transform 0.2s;
+            margin-top: 10px;
         }
 
         .btn:hover {
@@ -134,6 +147,7 @@
             flex: 1;
             display: none;
             flex-direction: column;
+            height: 0;
         }
 
         .messages {
@@ -141,6 +155,8 @@
             padding: 20px;
             overflow-y: auto;
             background: #f8f9fa;
+            height: 0;
+            scroll-behavior: smooth;
         }
 
         .message {
@@ -149,18 +165,23 @@
             border-radius: 18px;
             max-width: 70%;
             word-wrap: break-word;
+            display: block;
         }
 
         .message.own {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            margin-left: auto;
-            text-align: right;
+            margin-left: 0;
+            margin-right: auto;
+            text-align: left;
         }
 
         .message.other {
             background: white;
             border: 1px solid #e1e8ed;
+            margin-left: auto;
+            margin-right: 0;
+            text-align: right;
         }
 
         .message.system {
@@ -179,12 +200,27 @@
             opacity: 0.7;
         }
 
+        .message.teacher {
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #f48fb1 100%) !important;
+            border: 2px solid #f8bbd9 !important;
+            color: #333 !important;
+            text-align: center !important;
+            margin: 10px auto !important;
+            font-weight: bold !important;
+            max-width: 70% !important;
+            padding: 12px 16px !important;
+            border-radius: 18px !important;
+            word-wrap: break-word !important;
+            display: block !important;
+        }
+
         .input-area {
             padding: 20px;
             background: white;
             border-top: 1px solid #e1e8ed;
             display: flex;
             gap: 10px;
+            flex-shrink: 0;
         }
 
         .message-input {
@@ -303,7 +339,16 @@
             });
 
             socket.on('newMessage', (data) => {
-                addMessage(data.message, data.sender, false);
+                // 자신의 메시지인지 확인
+                const isOwn = data.sender === studentName;
+                // 선생님 메시지인지 확인 (role이 teacher이거나 sender가 '선생님'인 경우)
+                const isTeacher = data.role === 'teacher' || data.sender === '선생님';
+                
+                if (isTeacher) {
+                    addTeacherMessage(data.message, data.sender);
+                } else {
+                    addMessage(data.message, data.sender, isOwn);
+                }
             });
 
             socket.on('userJoined', (data) => {
@@ -389,13 +434,19 @@
             input.value = '';
         }
 
-        // 메시지 추가
+        // 메시지 추가 함수 개선
         function addMessage(message, sender, isOwn) {
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
             
-            if (!isOwn) {
+            // 자신의 메시지인 경우 "나"로 표시, 다른 사람 메시지인 경우 실제 이름 표시
+            if (isOwn) {
+                const senderDiv = document.createElement('div');
+                senderDiv.className = 'message-sender';
+                senderDiv.textContent = '나';
+                messageDiv.appendChild(senderDiv);
+            } else if (sender) {
                 const senderDiv = document.createElement('div');
                 senderDiv.className = 'message-sender';
                 senderDiv.textContent = sender;
@@ -407,6 +458,8 @@
             messageDiv.appendChild(contentDiv);
             
             messagesDiv.appendChild(messageDiv);
+            
+            // 자동 스크롤을 맨 아래로
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
@@ -416,6 +469,27 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message system';
             messageDiv.textContent = message;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // 선생님 메시지 추가 함수
+        function addTeacherMessage(message, sender) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message teacher';  // 'message.teacher' → 'message teacher'로 변경
+            
+            if (sender) {
+                const senderDiv = document.createElement('div');
+                senderDiv.className = 'message-sender';
+                senderDiv.textContent = sender;
+                messageDiv.appendChild(senderDiv);
+            }
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.textContent = message;
+            messageDiv.appendChild(contentDiv);
             
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;

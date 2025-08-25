@@ -137,7 +137,7 @@ function sendMessage() {
         classroomId: currentClassroom.id,
         message: message,
         sender: currentUser.name,
-        role: currentRole
+        role: currentUser.role  // currentRole → currentUser.role로 변경
     });
     
     messageInput.value = '';
