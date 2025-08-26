@@ -27,7 +27,7 @@ const users = new Map();
 
 // 라우트
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'teacher.html'));
+    res.sendFile(path.join(__dirname, 'student.html'));
 });
 
 app.get('/teacher', (req, res) => {
