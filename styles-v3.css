@@ -1,0 +1,774 @@
+/* 기본 스타일 리셋 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* 컨테이너 스타일 */
+.container {
+    display: flex;
+    height: 100vh;
+    background: white;
+    box-shadow: 0 0 30px rgba(0,0,0,0.2);
+}
+
+/* 사이드바 스타일 */
+.sidebar {
+    width: 300px;
+    background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.sidebar h1 {
+    font-size: 24px;
+    margin-bottom: 30px;
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* 컨트롤 패널 스타일 */
+.control-panel {
+    background: rgba(255,255,255,0.1);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.control-panel h3 {
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.control-group {
+    margin-bottom: 15px;
+}
+
+.control-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.control-group input {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    background: rgba(255,255,255,0.9);
+}
+
+.control-group input:focus {
+    outline: none;
+    background: white;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.5);
+}
+
+/* 버튼 스타일 */
+.btn {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.3);
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    margin: 5px;
+    backdrop-filter: blur(10px);
+}
+
+.btn:hover {
+    background: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.5);
+    transform: translateY(-2px);
+}
+
+.btn.primary {
+    background: #2ed573;
+    border-color: #2ed573;
+}
+
+.btn.primary:hover {
+    background: #26d065;
+    transform: translateY(-2px);
+}
+
+.btn.danger {
+    background: #ff4757;
+    border-color: #ff4757;
+}
+
+.btn.danger:hover {
+    background: #ff3838;
+    transform: translateY(-2px);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* 상태 표시 */
+.status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ff4757;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.connected {
+    background: #2ed573;
+}
+
+.status-dot.classroom-open {
+    background: #ffa502;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* 메인 영역 스타일 */
+.main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: #f8f9fa;
+}
+
+/* 헤더 스타일 */
+.header {
+    background: white;
+    padding: 20px;
+    border-bottom: 1px solid #e1e8ed;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.header h2 {
+    color: #333;
+    font-size: 20px;
+}
+
+.classroom-info {
+    color: #666;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+/* 메시지 캔버스 스타일 */
+.message-canvas {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(45deg, #f8f9fa 25%, transparent 25%), 
+                linear-gradient(-45deg, #f8f9fa 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #f8f9fa 75%), 
+                linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* 메시지 컨테이너 스타일 */
+.message-container {
+    position: absolute;
+    z-index: 10;
+    cursor: grab; /* 드래그 가능함을 표시 */
+    user-select: none; /* 텍스트 선택 방지 */
+}
+
+/* 드래그 중 커서 변경 */
+.message-container:active {
+    cursor: grabbing;
+}
+
+/* 드래그 중 원본 메시지 스타일 */
+.message-container.dragging {
+    opacity: 0.7;
+    cursor: grabbing;
+    pointer-events: auto;
+    z-index: 1000;
+}
+
+/* 드래그 효과 개선 */
+.message-container.dragging .message-bubble {
+    transform: rotate(5deg) scale(1.05);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    border-color: #4facfe;
+    transition: none;
+}
+
+/* 말풍선 바깥 헤더 스타일 */
+.message-header-outside {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    padding-left: 4px;
+}
+
+.message-sender-outside {
+    font-size: 11px;
+    font-weight: 600;
+    color: #333;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 8px;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.message-time-outside {
+    font-size: 9px;
+    color: #666;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 2px 6px;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* 학생 메시지 헤더 색상 */
+.message-container.student .message-sender-outside {
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    color: white;
+}
+
+.message-container.student .message-time-outside {
+    background: rgba(116, 185, 255, 0.8);
+    color: white;
+}
+
+/* 선생님 메시지 헤더 색상 */
+.message-container.teacher .message-sender-outside {
+    background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+    color: white;
+}
+
+.message-container.teacher .message-time-outside {
+    background: rgba(253, 121, 168, 0.8);
+    color: white;
+}
+
+/* 호버 효과 */
+.message-container:hover .message-bubble {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+/* 부드러운 위치 변경을 위한 기본 transition */
+.message-container {
+    transition: opacity 0.2s ease;
+}
+
+/* 드래그 가이드라인 개선 */
+.drag-guidelines.active {
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+.guideline {
+    position: absolute;
+    background: rgba(79, 172, 254, 0.4);
+    z-index: 5;
+    transition: all 0.1s ease;
+}
+
+/* 휴지통 호버 효과 개선 */
+.trash-area.drag-over {
+    background: #ff3838;
+    transform: scale(1.15);
+    box-shadow: 0 8px 30px rgba(255, 71, 87, 0.6);
+    transition: all 0.2s ease;
+}
+
+/* 선택 효과 */
+.message-container.selected .message-bubble {
+    border-color: #4facfe;
+    box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
+}
+
+/* 숨김 효과 */
+.message-container.hidden {
+    opacity: 0.3;
+    filter: grayscale(100%);
+}
+
+/* 메시지 내용 스타일 */
+.message-sender {
+    font-size: 12px;
+    font-weight: bold;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.message-content {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.4;
+}
+
+.message-time {
+    font-size: 10px;
+    color: #999;
+    margin-top: 4px;
+    text-align: right;
+}
+
+/* 메시지 타입별 스타일 */
+.message-bubble.student {
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    color: white;
+}
+
+.message-bubble.student .message-sender {
+    color: rgba(255,255,255,0.8);
+}
+
+.message-bubble.student .message-time {
+    color: rgba(255,255,255,0.6);
+}
+
+.message-bubble.teacher {
+    background: #fff2cd !important;
+    color: #333 !important;
+}
+
+.message-bubble.teacher .message-sender {
+    color: #666 !important;
+}
+
+.message-bubble.teacher .message-time {
+    color: #999 !important;
+}
+
+/* 휴지통 영역 스타일 */
+.trash-area {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 80px;
+    height: 80px;
+    background: #ff4757;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+    z-index: 100;
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+}
+
+.trash-area.active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.trash-area.drag-over {
+    background: #ff3838;
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(255, 71, 87, 0.5);
+}
+
+/* 드래그 가이드라인 */
+.drag-guidelines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.drag-guidelines.active {
+    opacity: 1;
+}
+
+.guideline {
+    position: absolute;
+    background: rgba(79, 172, 254, 0.3);
+    z-index: 5;
+}
+
+.guideline.horizontal {
+    height: 1px;
+    left: 0;
+    right: 0;
+}
+
+.guideline.vertical {
+    width: 1px;
+    top: 0;
+    bottom: 0;
+}
+
+/* 연결선 스타일 */
+.connection-line {
+    position: absolute;
+    height: 2px;
+    background: linear-gradient(90deg, #4facfe, #00f2fe);
+    border-radius: 1px;
+    opacity: 0.7;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* 애니메이션 효과 */
+@keyframes messageAppear {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.message-bubble.new {
+    animation: messageAppear 0.5s ease-out;
+}
+
+@keyframes messageDisappear {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+.message-bubble.removing {
+    animation: messageDisappear 0.3s ease-in;
+}
+
+/* 툴팁 스타일 */
+.tooltip {
+    position: absolute;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tooltip.show {
+    opacity: 1;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+    
+    /* 반응형 메시지 버블 */
+    @media (max-width: 768px) {
+        .message-bubble {
+            max-width: 250px;
+            font-size: 13px;
+            padding: 10px 14px;
+        }
+        
+        .message-header-outside {
+            gap: 6px;
+        }
+        
+        .message-sender-outside {
+            font-size: 10px;
+            padding: 1px 6px;
+        }
+        
+        .message-time-outside {
+            font-size: 8px;
+            padding: 1px 4px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .message-bubble {
+            max-width: 200px;
+            font-size: 12px;
+            padding: 8px 12px;
+        }
+    }
+    
+    /* 화면 크기별 캔버스 조정 */
+    @media (max-height: 600px) {
+        .message-canvas {
+            background-size: 15px 15px;
+        }
+    }
+    
+    .message-bubble {
+        max-width: 250px;
+        font-size: 13px;
+    }
+    
+    .trash-area {
+        width: 60px;
+        height: 60px;
+        font-size: 20px;
+        bottom: 10px;
+        right: 10px;
+    }
+}
+
+/* 접근성 개선 */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* 포커스 스타일 */
+.btn:focus,
+input:focus {
+    outline: 2px solid #4facfe;
+    outline-offset: 2px;
+}
+
+.message-bubble:focus {
+    outline: 2px solid #4facfe;
+    outline-offset: 2px;
+}
+
+/* 로딩 애니메이션 */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 성공/에러 메시지 스타일 */
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.alert.success {
+    background: rgba(46, 213, 115, 0.1);
+    border: 1px solid rgba(46, 213, 115, 0.3);
+    color: #2ed573;
+}
+
+.alert.error {
+    background: rgba(255, 71, 87, 0.1);
+    border: 1px solid rgba(255, 71, 87, 0.3);
+    color: #ff4757;
+}
+
+.alert.info {
+    background: rgba(79, 172, 254, 0.1);
+    border: 1px solid rgba(79, 172, 254, 0.3);
+    color: #4facfe;
+}
+
+/* 메시지 버블 기본 스타일 */
+.message-bubble {
+    position: relative;
+    max-width: 300px;
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.4;
+    word-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+    background: white;
+}
+
+/* 말풍선 꼬리 */
+.message-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 20px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid;
+    border-top-color: inherit;
+}
+
+.message-bubble.student::before {
+    border-top-color: #0984e3;
+}
+
+.message-bubble.teacher::before {
+    border-top-color: #e84393;
+}
+
+/* 선생님 메시지 강제 스타일 적용 */
+.message-container.teacher .message-bubble,
+.message-bubble.teacher,
+div[data-message-id] .message-bubble {
+    background: #fff2cd !important;
+    color: #333 !important;
+}
+
+.message-container.teacher .message-bubble::before,
+.message-bubble.teacher::before,
+.message-bubble.student::before,
+.message-container .message-bubble::before,
+div[data-message-id] .message-bubble::before {
+    border-top-color: #fff2cd !important;
+}
+
+/* 모든 삼각형을 노란색으로 강제 적용 */
+* .message-bubble::before {
+    border-top-color: #fff2cd !important;
+}
+
+/* 선생님 페이지에서 보내는 모든 메시지 */
+body.teacher-page .message-bubble {
+    background: #fff2cd !important;
+    color: #333 !important;
+}
+
+body.teacher-page .message-bubble::before {
+    border-top-color: #fff2cd !important;
+}
+
+/* 메시지 입력 textarea 스타일 - 폭 전체 적용 */
+/* 선생님 페이지 메시지 입력 - 컨테이너와 일관된 디자인 */
+#messageInput {
+    width: 100%; /* control-panel과 동일하게 전체 폭 사용 */
+    font-family: inherit;
+    line-height: 1.4;
+    padding: 10px; /* control-group input과 동일한 패딩 */
+    border: none;
+    border-radius: 8px; /* control-group input과 동일한 border-radius */
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+    background: rgba(255,255,255,0.9); /* control-group input과 동일한 배경 */
+    font-size: 14px; /* control-group input과 동일한 폰트 크기 */
+}
+
+#messageInput:focus {
+    background: white;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.5); /* control-group input과 동일한 포커스 스타일 */
+}
+
+/* 학생 페이지 메시지 입력 - 더 구체적인 선택자로 우선순위 강화 */
+.input-area .chat-input .message-input {
+    flex: 1 !important;  /* width 대신 flex 사용 */
+    min-width: 300px !important;
+    max-width: none !important;
+    padding: 16px 20px;
+    border: 2px solid #e1e8ed;
+    border-radius: 25px;
+    font-family: inherit;
+    line-height: 1.4;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+    font-size: 16px;
+    resize: vertical;
+    min-height: 40px;
+    max-height: 100px;
+}
+
+.input-area .chat-input .message-input:focus {
+    border-color: #4facfe;
+    box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.25);
+}
+
+/* 학생 페이지 채팅 입력 컨테이너 - 더 구체적한 선택자 */
+.input-area .chat-input {
+    display: flex !important;
+    gap: 15px;
+    width: 100%;
+    max-width: none !important;
+    align-items: center;
+    justify-content: flex-start !important;
+}
+
+/* 전송 버튼 스타일 - 더 구체적한 선택자 */
+.input-area .chat-input .send-btn {
+    flex-shrink: 0;
+    padding: 16px 24px;
+    background: #4facfe;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.input-area .chat-input .send-btn:hover {
+    background: #3d8bfe;
+}
+
+.chat-input .send-btn:active {
+    background: #2a7bfe;
+}

@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보건쌤 교실 - 학생 (업그레이드)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        /* 좌측: 자료 뷰어 영역 */
+        .viewer-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .viewer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .viewer-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .sync-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .sync-indicator.disconnected {
+            background: #dc3545;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .viewer-content {
+            height: calc(100% - 60px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .no-content {
+            color: #666;
+            font-size: 16px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .viewer-content img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .viewer-content video {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+        }
+
+        .viewer-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 8px;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            z-index: 10;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 우측: 채팅 및 입장 영역 */
+        .chat-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .join-section {
+            padding: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .join-section.joined {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .join-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .join-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .join-form.hidden {
+            display: none;
+        }
+
+        .join-input {
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .join-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .join-input:focus {
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .join-btn {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .join-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .join-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .classroom-info {
+            text-align: center;
+        }
+
+        .classroom-status {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .student-name {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .leave-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .leave-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(100vh - 300px);
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .message.teacher {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.student {
+            background: #f1f3f4;
+            color: #333;
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message.own {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message-info {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .chat-input {
+            padding: 20px;
+            border-top: 2px solid #f0f0f0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .message-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 알림 메시지 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+
+            .viewer-section {
+                order: 2;
+            }
+
+            .chat-section {
+                order: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 좌측: 자료 뷰어 영역 -->
+        <div class="viewer-section">
+            <div class="viewer-header">
+                <div class="viewer-title">수업 자료</div>
+                <div class="sync-status">
+                    <div class="sync-indicator" id="syncIndicator"></div>
+                    <span id="syncStatus">실시간 동기화</span>
+                </div>
+            </div>
+            <div class="viewer-content" id="viewerContent">
+                <div class="no-content">
+                    🏫 교실에 입장하면<br>
+                    선생님이 공유하는 자료를<br>
+                    실시간으로 볼 수 있습니다
+                </div>
+            </div>
+            <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+
+        <!-- 우측: 채팅 및 입장 영역 -->
+        <div class="chat-section">
+            <div class="join-section" id="joinSection">
+                <div class="join-title">보건쌤 교실 입장</div>
+                
+                <!-- 입장 폼 -->
+                <div class="join-form" id="joinForm">
+                    <input type="text" class="join-input" id="studentNameInput" placeholder="이름을 입력하세요" maxlength="20">
+                    <input type="text" class="join-input" id="classroomCodeInput" placeholder="교실 코드를 입력하세요" maxlength="10">
+                    <button class="join-btn" id="joinBtn" onclick="joinClassroom()">입장하기</button>
+                </div>
+                
+                <!-- 입장 후 정보 -->
+                <div class="classroom-info" id="classroomInfo" style="display: none;">
+                    <div class="classroom-status" id="classroomStatus">교실에 입장했습니다</div>
+                    <div class="student-name" id="studentNameDisplay"></div>
+                    <button class="leave-btn" onclick="leaveClassroom()">교실 나가기</button>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages"></div>
+            
+            <div class="chat-input disabled" id="chatInputSection">
+                <input type="text" class="message-input" id="messageInput" placeholder="교실에 입장 후 채팅할 수 있습니다" onkeypress="handleKeyPress(event)" disabled>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>전송</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림 메시지 -->
+    <div class="notification" id="notification"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let isJoined = false;
+        let studentName = '';
+        let classroomCode = '';
+        let currentMaterial = null;
+
+        // 페이지 로드 시 초기화
+        window.onload = function() {
+            // 엔터키로 입장 가능하도록 설정
+            document.getElementById('studentNameInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('classroomCodeInput').focus();
+                }
+            });
+            
+            document.getElementById('classroomCodeInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    joinClassroom();
+                }
+            });
+        };
+
+        // 교실 입장
+        function joinClassroom() {
+            const nameInput = document.getElementById('studentNameInput');
+            const codeInput = document.getElementById('classroomCodeInput');
+            
+            const name = nameInput.value.trim();
+            const code = codeInput.value.trim();
+            
+            if (!name) {
+                showNotification('이름을 입력해주세요', 'error');
+                nameInput.focus();
+                return;
+            }
+            
+            if (!code) {
+                showNotification('교실 코드를 입력해주세요', 'error');
+                codeInput.focus();
+                return;
+            }
+            
+            // 입장 버튼 비활성화
+            document.getElementById('joinBtn').disabled = true;
+            document.getElementById('joinBtn').textContent = '입장 중...';
+            
+            studentName = name;
+            classroomCode = code;
+            
+            // 서버가 기대하는 데이터 구조로 수정
+            socket.emit('joinClassroom', {
+                classroomId: code,
+                name: name,
+                role: 'student'
+            });
+        }
+
+        // 교실 입장 결과 처리
+        socket.on('joinResult', (data) => {
+            if (data.success) {
+                isJoined = true;
+                
+                // UI 업데이트
+                document.getElementById('joinForm').classList.add('hidden');
+                document.getElementById('classroomInfo').style.display = 'block';
+                document.getElementById('joinSection').classList.add('joined');
+                document.getElementById('studentNameDisplay').textContent = `${studentName}님`;
+                
+                // 채팅 활성화
+                const chatInputSection = document.getElementById('chatInputSection');
+                const messageInput = document.getElementById('messageInput');
+                const sendBtn = document.getElementById('sendBtn');
+                
+                chatInputSection.classList.remove('disabled');
+                messageInput.disabled = false;
+                messageInput.placeholder = '메시지를 입력하세요...';
+                sendBtn.disabled = false;
+                
+                // 뷰어 상태 업데이트
+                updateViewerContent('교실에 입장했습니다!<br>선생님이 자료를 공유하면<br>여기에 표시됩니다');
+                
+                showNotification('교실에 성공적으로 입장했습니다!');
+            } else {
+                showNotification(data.message, 'error');
+                
+                // 입장 버튼 다시 활성화
+                document.getElementById('joinBtn').disabled = false;
+                document.getElementById('joinBtn').textContent = '입장하기';
+            }
+        });
+        
+        // 기존의 joinSuccess, joinError 이벤트 리스너는 제거
+        socket.on('joinError', (error) => {
+            showNotification(error, 'error');
+            
+            // 입장 버튼 다시 활성화
+            document.getElementById('joinBtn').disabled = false;
+            document.getElementById('joinBtn').textContent = '입장하기';
+        });
+
+        // 교실 나가기
+        function leaveClassroom() {
+            if (confirm('교실을 나가시겠습니까?')) {
+                socket.emit('leaveClassroom', {
+                    studentName: studentName,
+                    classroomCode: classroomCode
+                });
+                
+                // UI 초기화
+                isJoined = false;
+                studentName = '';
+                classroomCode = '';
+                currentMaterial = null;
+                
+                document.getElementById('joinForm').classList.remove('hidden');
+                document.getElementById('classroomInfo').style.display = 'none';
+                document.getElementById('joinSection').classList.remove('joined');
+                
+                // 입력 필드 초기화
+                document.getElementById('studentNameInput').value = '';
+                document.getElementById('classroomCodeInput').value = '';
+                document.getElementById('joinBtn').disabled = false;
+                document.getElementById('joinBtn').textContent = '입장하기';
+                
+                // 채팅 비활성화
+                const chatInputSection = document.getElementById('chatInputSection');
+                const messageInput = document.getElementById('messageInput');
+                const sendBtn = document.getElementById('sendBtn');
+                
+                chatInputSection.classList.add('disabled');
+                messageInput.disabled = true;
+                messageInput.placeholder = '교실에 입장 후 채팅할 수 있습니다';
+                messageInput.value = '';
+                sendBtn.disabled = true;
+                
+                // 채팅 메시지 초기화
+                document.getElementById('chatMessages').innerHTML = '';
+                
+                // 뷰어 초기화
+                updateViewerContent('🏫 교실에 입장하면<br>선생님이 공유하는 자료를<br>실시간으로 볼 수 있습니다');
+                
+                showNotification('교실에서 나왔습니다');
+            }
+        }
+
+        // 메시지 전송
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message && isJoined) {
+                // studentMessage 대신 sendMessage 이벤트 사용
+                socket.emit('sendMessage', {
+                    message: message
+                });
+                input.value = '';
+            }
+        }
+
+        // 엔터키로 메시지 전송
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // 메시지 수신
+        socket.on('newMessage', (data) => {
+            addMessageToChat(data);
+        });
+
+        // 채팅에 메시지 추가
+        function addMessageToChat(data) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            
+            let messageClass = data.role;
+            if (data.role === 'student' && data.studentName === studentName) {
+                messageClass = 'own';
+            }
+            
+            messageDiv.className = `message ${messageClass}`;
+            
+            const senderName = data.role === 'teacher' ? '선생님' : data.studentName;
+            
+            messageDiv.innerHTML = `
+                <div class="message-info">${senderName} • ${data.timestamp}</div>
+                <div>${data.message}</div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 자료 동기화 수신
+        socket.on('materialSync', (material) => {
+            if (isJoined) {
+                showMaterial(material);
+                showNotification('새로운 자료가 공유되었습니다!');
+            }
+        });
+
+        // 뷰어 초기화 수신
+        socket.on('viewerCleared', () => {
+            if (isJoined) {
+                clearViewer();
+                showNotification('화면이 초기화되었습니다');
+            }
+        });
+
+        // 자료 표시
+        function showMaterial(material) {
+            currentMaterial = material;
+            showLoadingOverlay();
+            
+            const viewerContent = document.getElementById('viewerContent');
+            
+            setTimeout(() => {
+                if (material.type === 'youtube') {
+                    // YouTube 비디오
+                    const videoId = extractYouTubeId(material.url);
+                    viewerContent.innerHTML = `
+                        <iframe src="https://www.youtube.com/embed/${videoId}" 
+                                allowfullscreen></iframe>
+                    `;
+                } else if (material.type.includes('image')) {
+                    // 이미지
+                    viewerContent.innerHTML = `<img src="${material.url}" alt="${material.name}" onload="hideLoadingOverlay()">`;
+                } else if (material.type.includes('video')) {
+                    // 비디오
+                    viewerContent.innerHTML = `
+                        <video controls onloadeddata="hideLoadingOverlay()">
+                            <source src="${material.url}" type="${material.type}">
+                            브라우저가 비디오를 지원하지 않습니다.
+                        </video>
+                    `;
+                } else if (material.type.includes('pdf')) {
+                    // PDF
+                    viewerContent.innerHTML = `
+                        <iframe src="${material.url}" type="application/pdf" onload="hideLoadingOverlay()"></iframe>
+                    `;
+                }
+                
+                // YouTube나 로딩 이벤트가 없는 경우 일정 시간 후 로딩 숨김
+                if (material.type === 'youtube') {
+                    setTimeout(hideLoadingOverlay, 1000);
+                }
+            }, 300);
+        }
+
+        // YouTube ID 추출
+        function extractYouTubeId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        // 뷰어 초기화
+        function clearViewer() {
+            updateViewerContent('교실에 입장했습니다!<br>선생님이 자료를 공유하면<br>여기에 표시됩니다');
+            currentMaterial = null;
+        }
+
+        // 뷰어 내용 업데이트
+        function updateViewerContent(content) {
+            document.getElementById('viewerContent').innerHTML = `<div class="no-content">${content}</div>`;
+        }
+
+        // 로딩 오버레이 표시
+        function showLoadingOverlay() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        // 로딩 오버레이 숨김
+        function hideLoadingOverlay() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // 알림 메시지 표시
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // 연결 상태 모니터링
+        socket.on('connect', () => {
+            document.getElementById('syncIndicator').classList.remove('disconnected');
+            document.getElementById('syncStatus').textContent = '실시간 동기화';
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('syncIndicator').classList.add('disconnected');
+            document.getElementById('syncStatus').textContent = '연결 끊김';
+            showNotification('서버와의 연결이 끊어졌습니다', 'error');
+        });
+
+        // 채팅 초기화 수신
+        socket.on('chatCleared', () => {
+            if (isJoined) {
+                document.getElementById('chatMessages').innerHTML = '';
+                showNotification('채팅이 초기화되었습니다');
+            }
+        });
+    </script>
+</body>
+</html>

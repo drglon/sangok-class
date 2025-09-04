@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보건쌤 교실 - 선생님 (업그레이드)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: 2fr 1fr;
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        /* 좌상단: 뷰어 영역 */
+        .viewer-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .viewer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .viewer-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .viewer-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .viewer-content {
+            height: calc(100% - 60px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .no-content {
+            color: #666;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .viewer-content img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .viewer-content video {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+        }
+
+        .viewer-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 8px;
+        }
+
+        /* 우측: 채팅 영역 */
+        .chat-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            grid-row: 1 / 3;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .classroom-info {
+            text-align: center;
+        }
+
+        .classroom-code {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .student-count {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .classroom-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .classroom-btn {
+            padding: 8px 16px;
+            border: 2px solid white;
+            border-radius: 20px;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .classroom-btn:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .classroom-btn.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(100vh - 300px);
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .message.teacher {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.student {
+            background: #f1f3f4;
+            color: #333;
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-info {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .chat-input {
+            padding: 20px;
+            border-top: 2px solid #f0f0f0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .message-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* 좌하단: 자료 플로우 영역 */
+        .materials-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .materials-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .materials-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            background: #f0f4ff;
+            border-color: #5a6fd8;
+        }
+
+        .upload-area.dragover {
+            background: #e8f0ff;
+            border-color: #4c63d2;
+        }
+
+        .upload-text {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .youtube-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .youtube-url {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .youtube-url:focus {
+            border-color: #667eea;
+        }
+
+        .add-youtube-btn {
+            padding: 10px 15px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .materials-list {
+            height: calc(100% - 150px);
+            overflow-y: auto;
+        }
+
+        .material-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .material-item:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .material-item.active {
+            background: #e8f0ff;
+            border-color: #667eea;
+        }
+
+        .material-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .material-icon.image {
+            background: #28a745;
+        }
+
+        .material-icon.video {
+            background: #dc3545;
+        }
+
+        .material-icon.pdf {
+            background: #fd7e14;
+        }
+
+        .material-icon.youtube {
+            background: #ff0000;
+        }
+
+        .material-info {
+            flex: 1;
+        }
+
+        .material-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .material-type {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .material-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            padding: 5px 8px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .show-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr 1fr;
+            }
+
+            .chat-section {
+                grid-row: 3;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 좌상단: 뷰어 영역 -->
+        <div class="viewer-section">
+            <div class="viewer-header">
+                <div class="viewer-title">수업 자료 뷰어</div>
+                <div class="viewer-controls">
+                    <button class="control-btn" onclick="syncToStudents()">학생 화면 동기화</button>
+                    <button class="control-btn" onclick="clearViewer()">화면 지우기</button>
+                </div>
+            </div>
+            <div class="viewer-content" id="viewerContent">
+                <div class="no-content">자료를 선택하면 여기에 표시됩니다</div>
+            </div>
+        </div>
+
+        <!-- 우측: 채팅 영역 -->
+        <div class="chat-section">
+            <div class="chat-header">
+                <div class="classroom-info">
+                    <div class="classroom-code" id="classroomCode">교실 코드</div>
+                    <div class="student-count" id="studentCount">접속 학생: 0명</div>
+                </div>
+                <div class="classroom-controls">
+                    <button class="classroom-btn" id="openBtn" onclick="openClassroom()">교실 열기</button>
+                    <button class="classroom-btn" id="closeBtn" onclick="closeClassroom()">교실 닫기</button>
+                    <button class="classroom-btn" onclick="clearChat()">채팅 지우기</button>
+                </div>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input">
+                <input type="text" class="message-input" id="messageInput" placeholder="메시지를 입력하세요..." onkeypress="handleKeyPress(event)">
+                <button class="send-btn" onclick="sendMessage()">전송</button>
+            </div>
+        </div>
+
+        <!-- 좌하단: 자료 플로우 영역 -->
+        <div class="materials-section">
+            <div class="materials-header">
+                <div class="materials-title">수업 자료</div>
+            </div>
+            
+            <!-- 파일 업로드 영역 -->
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-text">📁 파일을 드래그하거나 클릭하여 업로드</div>
+                <div class="upload-hint">이미지, PPT, PDF, 동영상 지원 (최대 50MB)</div>
+            </div>
+            <input type="file" id="fileInput" style="display: none" multiple accept=".jpg,.jpeg,.png,.gif,.pdf,.ppt,.pptx,.mp4,.avi,.mov">
+            
+            <!-- YouTube 링크 추가 -->
+            <div class="youtube-input">
+                <input type="text" class="youtube-url" id="youtubeUrl" placeholder="YouTube 링크를 입력하세요">
+                <button class="add-youtube-btn" onclick="addYouTubeLink()">추가</button>
+            </div>
+            
+            <!-- 자료 목록 -->
+            <div class="materials-list" id="materialsList">
+                <!-- 자료 항목들이 여기에 동적으로 추가됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let classroomCode = '';
+        let isClassroomOpen = false;
+        let currentMaterial = null;
+        let materials = [];
+
+        // 페이지 로드 시 초기화
+        window.onload = function() {
+            // 저장된 교실 정보 복원
+            restoreClassroomState();
+            setupFileUpload();
+        };
+
+        // 교실 상태 저장
+        function saveClassroomState() {
+            const classroomState = {
+                classroomCode: classroomCode,
+                isClassroomOpen: isClassroomOpen,
+                materials: materials,
+                currentMaterial: currentMaterial
+            };
+            localStorage.setItem('classroomState', JSON.stringify(classroomState));
+        }
+
+        // 교실 상태 복원
+        function restoreClassroomState() {
+            const savedState = localStorage.getItem('classroomState');
+            
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                classroomCode = state.classroomCode || '';
+                isClassroomOpen = state.isClassroomOpen || false;
+                materials = state.materials || [];
+                currentMaterial = state.currentMaterial || null;
+                
+                // UI 업데이트
+                if (classroomCode) {
+                    document.getElementById('classroomCode').textContent = `교실 코드: ${classroomCode}`;
+                    
+                    // 교실 상태에 따른 버튼 활성화
+                    if (isClassroomOpen) {
+                        document.getElementById('openBtn').classList.add('active');
+                        document.getElementById('closeBtn').classList.remove('active');
+                    } else {
+                        document.getElementById('closeBtn').classList.add('active');
+                        document.getElementById('openBtn').classList.remove('active');
+                    }
+                    
+                    // 자료 목록 복원
+                    renderMaterialsList();
+                    
+                    // 현재 자료 복원
+                    if (currentMaterial) {
+                        const materialIndex = materials.findIndex(m => m.id === currentMaterial.id);
+                        if (materialIndex !== -1) {
+                            showMaterial(materialIndex);
+                        }
+                    }
+                    
+                    // 서버에 재연결 알림
+                    socket.emit('reconnectTeacher', classroomCode);
+                } else {
+                    // 저장된 교실이 없으면 새로 생성
+                    initializeClassroom();
+                }
+            } else {
+                // 처음 접속이면 새 교실 생성
+                initializeClassroom();
+            }
+        }
+
+        // 교실 초기화 (수정)
+        function initializeClassroom() {
+            const classroomName = prompt('교실 이름을 입력하세요:', '수업');
+            const teacherName = prompt('선생님 이름을 입력하세요:', '선생님');
+            
+            if (classroomName && teacherName) {
+                socket.emit('createClassroom', {
+                    classroomName: classroomName,
+                    teacherName: teacherName
+                });
+            }
+        }
+
+        // 교실 생성 응답 (수정)
+        socket.on('classroomCreated', (data) => {
+            classroomCode = data.classroom.id;
+            document.getElementById('classroomCode').textContent = `교실 코드: ${data.classroom.id}`;
+            console.log('교실이 생성되었습니다:', data.classroom);
+            
+            // 교실 상태 저장
+            saveClassroomState();
+        });
+
+        // 교실 열기 (수정)
+        function openClassroom() {
+            socket.emit('openClassroom', classroomCode);
+            isClassroomOpen = true;
+            document.getElementById('openBtn').classList.add('active');
+            document.getElementById('closeBtn').classList.remove('active');
+            
+            // 상태 저장
+            saveClassroomState();
+        }
+
+        // 교실 닫기 (수정)
+        function closeClassroom() {
+            socket.emit('closeClassroom', classroomCode);
+            isClassroomOpen = false;
+            document.getElementById('closeBtn').classList.add('active');
+            document.getElementById('openBtn').classList.remove('active');
+            
+            // 상태 저장
+            saveClassroomState();
+        }
+
+        // 자료 목록에 추가 (수정)
+        function addMaterialToList(material) {
+            materials.push(material);
+            renderMaterialsList();
+            
+            // 상태 저장
+            saveClassroomState();
+        }
+
+        // 자료 삭제 (수정)
+        function deleteMaterial(index) {
+            if (confirm('이 자료를 삭제하시겠습니까?')) {
+                materials.splice(index, 1);
+                renderMaterialsList();
+                
+                // 현재 표시 중인 자료가 삭제된 경우
+                if (currentMaterial && materials.findIndex(m => m.id === currentMaterial.id) === -1) {
+                    clearViewer();
+                }
+                
+                // 상태 저장
+                saveClassroomState();
+            }
+        }
+
+        // 자료 표시 (수정)
+        function showMaterial(index) {
+            const material = materials[index];
+            currentMaterial = material;
+            
+            const viewerContent = document.getElementById('viewerContent');
+            
+            // 이전 활성 상태 제거
+            document.querySelectorAll('.material-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // 현재 선택된 항목 활성화
+            document.querySelector(`[data-index="${index}"]`).classList.add('active');
+            
+            if (material.type === 'youtube') {
+                // YouTube 비디오
+                const videoId = extractYouTubeId(material.url);
+                viewerContent.innerHTML = `
+                    <iframe src="https://www.youtube.com/embed/${videoId}" 
+                            allowfullscreen></iframe>
+                `;
+            } else if (material.type.includes('image')) {
+                // 이미지
+                viewerContent.innerHTML = `<img src="${material.url}" alt="${material.name}">`;
+            } else if (material.type.includes('video')) {
+                // 비디오
+                viewerContent.innerHTML = `
+                    <video controls>
+                        <source src="${material.url}" type="${material.type}">
+                        브라우저가 비디오를 지원하지 않습니다.
+                    </video>
+                `;
+            } else if (material.type.includes('pdf')) {
+                // PDF
+                viewerContent.innerHTML = `
+                    <iframe src="${material.url}" type="application/pdf"></iframe>
+                `;
+            }
+        }
+
+        // YouTube ID 추출
+        function extractYouTubeId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        // 자료 삭제
+        function deleteMaterial(index) {
+            if (confirm('이 자료를 삭제하시겠습니까?')) {
+                const material = materials[index];
+                
+                fetch('/api/material/delete', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        materialId: material.id,
+                        classroomCode: classroomCode
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        materials.splice(index, 1);
+                        renderMaterialsList();
+                        
+                        // 현재 표시 중인 자료라면 뷰어 초기화
+                        if (currentMaterial && currentMaterial.id === material.id) {
+                            clearViewer();
+                        }
+                    }
+                });
+            }
+        }
+
+        // 학생 화면 동기화
+        function syncToStudents() {
+            if (currentMaterial) {
+                socket.emit('syncMaterial', {
+                    classroomCode: classroomCode,
+                    material: currentMaterial
+                });
+                
+                // 시각적 피드백
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '동기화됨!';
+                btn.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '';
+                }, 2000);
+            } else {
+                alert('먼저 자료를 선택해주세요.');
+            }
+        }
+
+        // 뷰어 초기화
+        function clearViewer() {
+            document.getElementById('viewerContent').innerHTML = 
+                '<div class="no-content">자료를 선택하면 여기에 표시됩니다</div>';
+            currentMaterial = null;
+            
+            // 모든 자료 항목 비활성화
+            document.querySelectorAll('.material-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // 학생 화면도 초기화
+            socket.emit('clearStudentViewer', classroomCode);
+        }
+
+        // 자료 목록 드래그 앤 드롭으로 순서 변경 (추후 구현)
+        // TODO: Sortable.js 라이브러리 추가하여 드래그 앤 드롭 순서 변경 구현
+    </script>
+</body>
+</html>
