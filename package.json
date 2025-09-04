@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "인터랙티브 교실 시스템 - 선생님이 학생 메시지를 조작할 수 있는 실시간 채팅",
   "main": "server-v3.js",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
   "scripts": {
     "start": "node server-v3.js",
     "start-v3": "node server-v3.js",
@@ -12,6 +16,7 @@
     "dev-v3": "nodemon server-v3.js",
     "dev-v2": "nodemon server-v2.js",
     "dev-v1": "nodemon server.js",
+    "build": "echo 'No build step required'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["classroom", "chat", "websocket", "drag-drop", "education"],
