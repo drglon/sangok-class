@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>선생님 - 인터랙티브 교실 V3</title>
-    <link rel="stylesheet" href="styles-v3.css">
+    <title>선생님 - 인터랙티브 교실 V4</title>
+    <link rel="stylesheet" href="styles-v4.css">
 </head>
 <body>
     <div class="container">
@@ -45,10 +45,7 @@
                 <div class="control-group">
                     <textarea id="messageInput" maxlength="500" rows="3" style="resize: vertical; min-height: 60px; max-height: 120px;"></textarea>
                 </div>
-                <div class="button-group">
-                    <button class="btn primary" onclick="sendMessage()">전송</button>
-                    <button class="btn danger" onclick="clearAllMessages()">일괄삭제</button>
-                </div>
+                <button class="btn primary" onclick="sendMessage()">전송</button>
             </div>
             
             <!-- 도움말 -->
@@ -67,7 +64,7 @@
         <div class="main-area">
             <!-- 헤더 -->
             <div class="header">
-                <h2>📚 인터랙티브 교실 V3</h2>
+                <h2>📚 인터랙티브 교실 V4</h2>
                 <div class="classroom-info" id="headerClassroomInfo">
                     교실을 생성하거나 입장해주세요.
                 </div>
@@ -91,6 +88,6 @@
     </div>
     
     <script src="/socket.io/socket.io.js"></script>
-    <script src="client-v3.js"></script>
+    <script src="client-v4.js"></script>
 </body>
 </html>

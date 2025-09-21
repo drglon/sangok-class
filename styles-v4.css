@@ -741,7 +741,7 @@ body.teacher-page .message-bubble::before {
     box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.25);
 }
 
-/* 학생 페이지 채팅 입력 컨테이너 - 더 구체적한 선택자 */
+/* 학생 페이지 채팅 입력 컨테이너 - 더 구체적인 선택자 */
 .input-area .chat-input {
     display: flex !important;
     gap: 15px;
@@ -751,7 +751,7 @@ body.teacher-page .message-bubble::before {
     justify-content: flex-start !important;
 }
 
-/* 전송 버튼 스타일 - 더 구체적한 선택자 */
+/* 전송 버튼 스타일 - 더 구체적인 선택자 */
 .input-area .chat-input .send-btn {
     flex-shrink: 0;
     padding: 16px 24px;
@@ -771,17 +771,4 @@ body.teacher-page .message-bubble::before {
 
 .chat-input .send-btn:active {
     background: #2a7bfe;
-}
-
-/* 버튼 그룹 스타일 */
-.button-group {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.button-group .btn {
-    flex: 1;
-    margin: 0;
-    min-width: 80px;
 }

@@ -15,8 +15,8 @@ let elementStartPos = { x: 0, y: 0 };
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
-    // Socket.IO 연결
-    socket = io();
+    // Socket.IO 연결 (포트 3003으로 명시적 연결)
+    socket = io('http://localhost:3003');
     
     // 현재 페이지가 선생님 페이지인지 학생 페이지인지 확인
     if (window.location.pathname.includes('teacher')) {
@@ -196,6 +196,24 @@ function sendMessage() {
     messageInput.value = '';
 }
 
+// 일괄삭제 기능
+function clearAllMessages() {
+    if (!currentClassroom || currentRole !== 'teacher') {
+        console.log('교실이 없거나 선생님이 아닙니다.');
+        return;
+    }
+    
+    // 확인 대화상자
+    if (confirm('현재 화면의 모든 메시지를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
+        console.log('일괄삭제 요청');
+        
+        // 서버에 일괄삭제 요청
+        socket.emit('clearAllMessages', {
+            classroomId: currentClassroom.id
+        });
+    }
+}
+
 // 소켓 이벤트 리스너 설정
 function setupSocketListeners() {
     // 연결 상태
@@ -250,6 +268,38 @@ function setupSocketListeners() {
     // 메시지 삭제
     socket.on('messageDeleted', function(data) {
         removeMessageFromCanvas(data.messageId);
+    });
+    
+    // 일괄삭제 응답
+    socket.on('allMessagesCleared', function(data) {
+        console.log('모든 메시지 삭제됨:', data);
+        
+        // 캔버스에서 모든 메시지 제거 (전체 컨테이너 제거)
+        const canvas = document.getElementById('messageCanvas');
+        const messages = canvas.querySelectorAll('.message-container');
+        
+        messages.forEach(message => {
+            message.remove();
+        });
+        
+        // 드래그 가이드라인 숨기기
+        hideDragGuidelines();
+        
+        // 휴지통 숨기기 (올바른 ID 사용)
+        const trashArea = document.getElementById('trashArea');
+        if (trashArea) {
+            trashArea.classList.remove('active', 'drag-over');
+            trashArea.style.display = 'none';
+        }
+        
+        // 선택된 메시지 초기화
+        selectedMessage = null;
+        
+        // 드래그 상태 초기화
+        isDragging = false;
+        isMouseDragging = false;
+        
+        console.log(`${data.deletedCount}개의 메시지가 삭제되었습니다.`);
     });
     
     // 에러 처리

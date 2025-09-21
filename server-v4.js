@@ -14,7 +14,7 @@ const io = socketIo(server, {
     }
 });
 
-const PORT = process.env.PORT || 3003; // V3 버전은 3003 포트 사용
+const PORT = process.env.PORT || 3007; // V4 버전은 3007 포트 사용
 
 // 미들웨어
 app.use(cors());
@@ -25,17 +25,17 @@ app.use(express.static(path.join(__dirname)));
 const classrooms = new Map();
 const users = new Map();
 
-// 라우트 - V3 파일들을 참조하도록 수정
+// 라우트 - V4 파일들을 참조하도록 수정
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'student-v3.html'));
+    res.sendFile(path.join(__dirname, 'student-v4.html'));
 });
 
 app.get('/teacher', (req, res) => {
-    res.sendFile(path.join(__dirname, 'teacher-v3.html'));
+    res.sendFile(path.join(__dirname, 'teacher-v4.html'));
 });
 
 app.get('/student', (req, res) => {
-    res.sendFile(path.join(__dirname, 'student-v3.html'));
+    res.sendFile(path.join(__dirname, 'student-v4.html'));
 });
 
 // API 엔드포인트
@@ -51,10 +51,10 @@ app.post('/api/classroom', (req, res) => {
         id: classroomId,
         name: name,
         teacher: teacherName,
-        isOpen: false,
-        createdAt: new Date(),
         students: [],
-        messages: []
+        messages: [],
+        isActive: true,
+        createdAt: new Date()
     };
     
     classrooms.set(classroomId, classroom);
@@ -62,16 +62,16 @@ app.post('/api/classroom', (req, res) => {
     res.json({
         success: true,
         classroom: {
-            id: classroom.id,
-            name: classroom.name,
-            teacher: classroom.teacher,
-            isOpen: classroom.isOpen
+            id: classroomId,
+            name: name,
+            teacher: teacherName,
+            isActive: true
         }
     });
 });
 
 app.get('/api/classroom/:id', (req, res) => {
-    const classroomId = req.params.id.toUpperCase();
+    const classroomId = req.params.id;
     const classroom = classrooms.get(classroomId);
     
     if (!classroom) {
@@ -84,8 +84,8 @@ app.get('/api/classroom/:id', (req, res) => {
             id: classroom.id,
             name: classroom.name,
             teacher: classroom.teacher,
-            isOpen: classroom.isOpen,
-            studentCount: classroom.students.length
+            studentCount: classroom.students.length,
+            isActive: classroom.isActive
         }
     });
 });
@@ -95,127 +95,130 @@ io.on('connection', (socket) => {
     console.log('사용자 연결:', socket.id);
     
     // 교실 생성
+    // 현재 잘못된 로직
     socket.on('createClassroom', (data) => {
-        const { classroomName, teacherName } = data;
+        console.log('createClassroom 이벤트 수신:', data);
+        const { name, teacherName } = data;
         
-        if (!classroomName || !teacherName) {
-            socket.emit('error', { message: '교실 이름과 선생님 이름이 필요합니다.' });
-            return;
-        }
+        // 교실 ID 생성
+        const classroomId = uuidv4().substring(0, 8).toUpperCase();
+        console.log('생성된 교실 ID:', classroomId);
         
-        // 2자리 랜덤 숫자 생성 (10-99)
-        let classroomId;
-        do {
-            classroomId = Math.floor(Math.random() * 90 + 10).toString();
-        } while (classrooms.has(classroomId)); // 중복 방지
-        
+        // 새 교실 생성
         const classroom = {
             id: classroomId,
-            name: classroomName,
+            name: name,
             teacher: teacherName,
-            isOpen: false,
-            createdAt: new Date(),
             students: [],
-            messages: []
+            messages: [],
+            isActive: true,
+            createdAt: new Date()
         };
         
         classrooms.set(classroomId, classroom);
         
-        const teacher = {
-            id: socket.id,
+        // 선생님 정보 저장
+        users.set(socket.id, {
             name: teacherName,
             role: 'teacher',
             classroomId: classroomId
-        };
+        });
         
-        users.set(socket.id, teacher);
+        // 교실 참가
         socket.join(classroomId);
         
-        socket.emit('classroomCreated', {  // joinResult → classroomCreated
-            success: true,
-            classroom: classroom,
-            user: teacher,
-            messages: classroom.messages
+        // 교실 생성 성공 응답
+        socket.emit('classroomCreated', {
+            classroom: {
+                id: classroom.id,
+                name: classroom.name,
+                teacher: classroom.teacher,
+                students: classroom.students,
+                messages: classroom.messages,
+                isActive: classroom.isActive
+            },
+            role: 'teacher'
         });
+        
+        console.log(`선생님 ${teacherName}이 교실 ${classroomId}(${name})을 생성했습니다.`);
     });
     
     // 교실 입장
     socket.on('joinClassroom', (data) => {
-        const { classroomId, name, role } = data;
-        const upperClassroomId = classroomId.toUpperCase();
-        const classroom = classrooms.get(upperClassroomId);
+        const { classroomId, studentName } = data;
+        
+        const classroom = classrooms.get(classroomId);
         
         if (!classroom) {
-            socket.emit('joinResult', {
-                success: false,
-                message: '존재하지 않는 교실입니다.'
-            });
+            socket.emit('error', { message: '존재하지 않는 교실입니다.' });
             return;
         }
         
-        if (role === 'student' && !classroom.isOpen) {
-            socket.emit('joinResult', {
-                success: false,
-                message: '교실이 아직 열리지 않았습니다.'
-            });
+        if (!classroom.isActive) {
+            socket.emit('error', { message: '현재 비활성화된 교실입니다.' });
             return;
         }
         
-        // 사용자 정보 생성
-        const user = {
+        // 학생 정보 저장
+        const student = {
             id: socket.id,
-            name: name,
-            role: role,
-            classroomId: upperClassroomId,
+            name: studentName,
             joinedAt: new Date()
         };
         
-        users.set(socket.id, user);
-        socket.join(upperClassroomId);
-        
-        // 학생인 경우 교실에 추가
-        if (role === 'student') {
-            classroom.students.push(user);
-        }
-        
-        // 입장 성공 응답
-        socket.emit('joinResult', {
-            success: true,
-            classroom: classroom,
-            user: user,
-            messages: classroom.messages
+        users.set(socket.id, {
+            name: studentName,
+            role: 'student',
+            classroomId: classroomId
         });
         
-        // 다른 사용자들에게 입장 알림
-        socket.to(upperClassroomId).emit('userJoined', {
-            name: user.name,
-            role: user.role
+        classroom.students.push(student);
+        
+        // 교실 참가
+        socket.join(classroomId);
+        
+        // 학생에게 교실 정보 전송
+        socket.emit('classroomJoined', {
+            classroom: {
+                id: classroom.id,
+                name: classroom.name,
+                teacher: classroom.teacher,
+                students: classroom.students,
+                messages: classroom.messages.filter(m => !m.hidden),
+                isActive: classroom.isActive
+            },
+            role: 'student'
         });
         
-        console.log(`${name}(${role})이 교실 ${classroom.name}에 입장했습니다.`);
+        // 다른 사용자들에게 새 학생 입장 알림
+        socket.to(classroomId).emit('studentJoined', {
+            student: student,
+            totalStudents: classroom.students.length
+        });
+        
+        console.log(`학생 ${studentName}이 교실 ${classroomId}에 입장했습니다.`);
     });
     
-    // 교실 열기/닫기
+    // 교실 상태 변경 (활성화/비활성화)
     socket.on('toggleClassroom', (data) => {
         const user = users.get(socket.id);
         
         if (!user || user.role !== 'teacher') {
-            socket.emit('error', { message: '선생님만 교실을 열고 닫을 수 있습니다.' });
+            socket.emit('error', { message: '선생님만 교실 상태를 변경할 수 있습니다.' });
             return;
         }
         
         const classroom = classrooms.get(user.classroomId);
-        if (!classroom) {
-            socket.emit('error', { message: '교실을 찾을 수 없습니다.' });
-            return;
-        }
+        if (!classroom) return;
         
-        classroom.isOpen = !classroom.isOpen;
+        classroom.isActive = data.isActive;
         
-        // 모든 사용자에게 교실 상태 변경 알림
-        io.to(user.classroomId).emit(classroom.isOpen ? 'classroomOpened' : 'classroomClosed');
+        // 모든 사용자에게 상태 변경 알림
+        io.to(user.classroomId).emit('classroomStatusChanged', {
+            isActive: classroom.isActive
+        });
         
-        console.log(`교실 ${classroom.name}이 ${classroom.isOpen ? '열렸습니다' : '닫혔습니다'}.`);
+        console.log(`교실 ${user.classroomId} 상태가 ${classroom.isActive ? '활성화' : '비활성화'}되었습니다.`);
     });
     
     // 메시지 전송
@@ -223,38 +226,44 @@ io.on('connection', (socket) => {
         const user = users.get(socket.id);
         
         if (!user) {
-            socket.emit('error', { message: '로그인이 필요합니다.' });
+            socket.emit('error', { message: '인증되지 않은 사용자입니다.' });
             return;
         }
         
         const classroom = classrooms.get(user.classroomId);
-        if (!classroom) {
-            socket.emit('error', { message: '교실을 찾을 수 없습니다.' });
-            return;
-        }
-        
-        if (!classroom.isOpen && user.role === 'student') {
-            socket.emit('error', { message: '교실이 닫혀있습니다.' });
-            return;
-        }
+        if (!classroom) return;
         
         const message = {
             id: uuidv4(),
-            sender: user.name,
+            text: data.text,
+            author: user.name,
             role: user.role,
-            message: data.message,
+            x: data.x || 100,
+            y: data.y || 100,
             timestamp: new Date(),
-            x: Math.random() * 500,
-            y: Math.random() * 300,
             hidden: false
         };
         
         classroom.messages.push(message);
         
-        // 모든 사용자에게 메시지 전송
-        io.to(user.classroomId).emit('newMessage', message);
+        // 모든 사용자에게 메시지 전송 (학생들에게는 숨겨진 메시지 제외)
+        if (user.role === 'teacher') {
+            // 선생님이 보낸 메시지는 모든 사용자에게
+            io.to(user.classroomId).emit('newMessage', message);
+        } else {
+            // 학생이 보낸 메시지는 선생님에게만
+            const teacherSockets = Array.from(users.entries())
+                .filter(([socketId, userData]) => 
+                    userData.classroomId === user.classroomId && userData.role === 'teacher'
+                )
+                .map(([socketId]) => socketId);
+            
+            teacherSockets.forEach(teacherSocketId => {
+                io.to(teacherSocketId).emit('newMessage', message);
+            });
+        }
         
-        console.log(`${user.name}: ${data.message}`);
+        console.log(`${user.role} ${user.name}이 메시지를 보냈습니다: ${data.text}`);
     });
     
     // 메시지 위치 업데이트
@@ -330,35 +339,6 @@ io.on('connection', (socket) => {
         }
     });
     
-    // 일괄삭제
-    socket.on('clearAllMessages', (data) => {
-        const user = users.get(socket.id);
-        
-        if (!user || user.role !== 'teacher') {
-            socket.emit('error', { message: '선생님만 메시지를 일괄삭제할 수 있습니다.' });
-            return;
-        }
-        
-        const classroom = classrooms.get(user.classroomId);
-        if (!classroom) {
-            socket.emit('error', { message: '교실을 찾을 수 없습니다.' });
-            return;
-        }
-        
-        const deletedCount = classroom.messages.length;
-        
-        // 모든 메시지 삭제
-        classroom.messages = [];
-        
-        // 모든 사용자에게 일괄삭제 알림
-        io.to(user.classroomId).emit('allMessagesCleared', {
-            deletedCount: deletedCount,
-            clearedBy: user.name
-        });
-        
-        console.log(`${user.name}이 교실 ${classroom.name}의 모든 메시지(${deletedCount}개)를 삭제했습니다.`);
-    });
-    
     // 연결 해제
     socket.on('disconnect', () => {
         const user = users.get(socket.id);
@@ -389,7 +369,7 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-    console.log(`🚀 V3 서버가 포트 ${PORT}에서 실행 중입니다.`);
-    console.log(`📚 선생님용: http://localhost:${PORT}/teacher-v3.html`);
-    console.log(`👨‍🎓 학생용: http://localhost:${PORT}/student-v3.html`);
+    console.log(`🚀 V4 서버가 포트 ${PORT}에서 실행 중입니다.`);
+    console.log(`📚 선생님용: http://localhost:${PORT}/teacher-v4.html`);
+    console.log(`👨‍🎓 학생용: http://localhost:${PORT}/student-v4.html`);
 });
