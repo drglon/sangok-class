@@ -15,8 +15,10 @@ let elementStartPos = { x: 0, y: 0 };
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
-    // Socket.IO 연결 (포트 3003으로 명시적 연결)
-    socket = io('http://localhost:3003');
+    // Socket.IO 연결 (배포 환경 대응)
+    // 개발 환경에서는 기본 URL, 배포 환경에서는 서버 URL 사용
+    const serverUrl = window.location.hostname === 'localhost' ? '' : 'https://sangok-class.onrender.com';
+    socket = io(serverUrl);
     
     // 현재 페이지가 선생님 페이지인지 학생 페이지인지 확인
     if (window.location.pathname.includes('teacher')) {
@@ -177,6 +179,20 @@ function toggleClassroom() {
     });
 }
 
+// 교실 열기/닫기 버튼 이벤트 리스너 추가
+function initToggleClassroomButton() {
+    const toggleBtn = document.getElementById('toggleClassroomBtn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleClassroom);
+    }
+    
+    // 일괄삭제 버튼 이벤트 리스너 추가
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', clearAllMessages);
+    }
+}
+
 // 메시지 전송
 function sendMessage() {
     const messageInput = document.getElementById('messageInput');
@@ -247,6 +263,23 @@ function setupSocketListeners() {
         console.log('교실 상태 변경:', data);
         currentClassroom.isOpen = data.isOpen;
         updateClassroomStatus(data.isOpen);
+    });
+    
+    // 교실 열기/닫기 이벤트 추가
+    socket.on('classroomOpened', function(data) {
+        console.log('교실 열림:', data);
+        if (currentClassroom) {
+            currentClassroom.isOpen = true;
+            updateClassroomStatus(true);
+        }
+    });
+    
+    socket.on('classroomClosed', function(data) {
+        console.log('교실 닫힘:', data);
+        if (currentClassroom) {
+            currentClassroom.isOpen = false;
+            updateClassroomStatus(false);
+        }
     });
     
     // 새 메시지 수신
@@ -342,6 +375,9 @@ function updateClassroomInfo(classroom) {
     if (headerInfo) {
         headerInfo.textContent = `${classroom.name} (코드: ${classroom.id})`;
     }
+    
+    // 토글 버튼 초기화
+    initToggleClassroomButton();
 }
 
 // 교실 컨트롤 표시
