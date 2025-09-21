@@ -212,8 +212,18 @@ io.on('connection', (socket) => {
         
         classroom.isOpen = !classroom.isOpen;
         
-        // 모든 사용자에게 교실 상태 변경 알림
-        io.to(user.classroomId).emit(classroom.isOpen ? 'classroomOpened' : 'classroomClosed');
+        // 모든 사용자에게 교실 상태 변경 알림 (데이터와 함께)
+        const eventData = {
+            classroomId: classroom.id,
+            isOpen: classroom.isOpen,
+            classroom: classroom
+        };
+        
+        if (classroom.isOpen) {
+            io.to(user.classroomId).emit('classroomOpened', eventData);
+        } else {
+            io.to(user.classroomId).emit('classroomClosed', eventData);
+        }
         
         console.log(`교실 ${classroom.name}이 ${classroom.isOpen ? '열렸습니다' : '닫혔습니다'}.`);
     });

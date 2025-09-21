@@ -15,10 +15,8 @@ let elementStartPos = { x: 0, y: 0 };
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
-    // Socket.IO 연결 (배포 환경 대응)
-    // 개발 환경에서는 기본 URL, 배포 환경에서는 서버 URL 사용
-    const serverUrl = window.location.hostname === 'localhost' ? '' : 'https://sangok-class.onrender.com';
-    socket = io(serverUrl);
+    // Socket.IO 연결 (현재 페이지와 같은 호스트:포트 사용)
+    socket = io(window.location.origin);
     
     // 현재 페이지가 선생님 페이지인지 학생 페이지인지 확인
     if (window.location.pathname.includes('teacher')) {
