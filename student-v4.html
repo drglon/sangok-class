@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학생 - 인터랙티브 교실 V4</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 800px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4757;
+            transition: background 0.3s;
+        }
+
+        .status-dot.connected {
+            background: #2ed573;
+        }
+
+        #classroomInfo {
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
+        .login-form {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-form h2 {
+            margin-bottom: 30px;
+            color: #333;
+            text-align: center;
+        }
+
+        .form-group {
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            border-color: #4facfe;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            height: 0;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            height: 0;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 70%;
+            word-wrap: break-word;
+            display: block;
+        }
+
+        .message.own {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            margin-left: 0;
+            margin-right: auto;
+            text-align: left;
+        }
+
+        .message.other {
+            background: white;
+            border: 1px solid #e1e8ed;
+            margin-left: auto;
+            margin-right: 0;
+            text-align: right;
+        }
+
+        .message.system {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            text-align: center;
+            margin: 10px auto;
+            font-style: italic;
+        }
+
+        .message-sender {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            opacity: 0.7;
+        }
+
+        .message.teacher {
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #f48fb1 100%) !important;
+            border: 2px solid #f8bbd9 !important;
+            color: #333 !important;
+            text-align: center !important;
+            margin: 10px auto !important;
+            font-weight: bold !important;
+            max-width: 70% !important;
+            padding: 12px 16px !important;
+            border-radius: 18px !important;
+            word-wrap: break-word !important;
+            display: block !important;
+        }
+
+        .input-area {
+            padding: 20px 10px;
+            background: white;
+            border-top: 1px solid #e1e8ed;
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+            align-items: center;
+        }
+
+        .chat-input {
+            width: 100% !important;
+            display: flex !important;
+            gap: 10px !important;
+            align-items: center;
+        }
+
+        .message-input {
+            width: 80% !important;
+            padding: 12px 16px !important;
+            border: 2px solid #e1e8ed;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            flex: none !important;
+        }
+
+        .send-btn {
+            width: 18% !important;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 8px !important;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            flex: none !important;
+        }
+
+        .message-input:focus {
+            border-color: #4facfe;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .error-message {
+            color: #ff4757;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .classroom-closed {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .classroom-closed h2 {
+            color: #ff4757;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 인터랙티브 교실 V4</h1>
+            <div class="status">
+                <div class="connection-status">
+                    <div class="status-dot" id="connectionDot"></div>
+                    <span id="connectionStatus">연결 중...</span>
+                </div>
+                <div id="classroomInfo"></div>
+            </div>
+        </div>
+
+        <!-- 로그인 폼 -->
+        <div class="login-form" id="loginForm">
+            <h2>교실 입장</h2>
+            <div class="form-group">
+                <label for="studentName">학생 이름</label>
+                <input type="text" id="studentName" placeholder="이름을 입력하세요" maxlength="20">
+            </div>
+            <div class="form-group">
+                <label for="classroomId">교실 코드</label>
+                <input type="text" id="classroomId" placeholder="선생님이 제공한 교실 코드를 입력하세요">
+            </div>
+            <button class="btn" id="joinBtn" onclick="joinClassroom()">교실 입장</button>
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+
+        <!-- 채팅 영역 -->
+        <div class="chat-area" id="chatArea">
+            <div class="messages" id="messages"></div>
+            <div class="input-area">
+                <div class="chat-input">
+                    <textarea class="message-input" id="messageInput" rows="2"></textarea>
+                    <button class="send-btn" onclick="sendMessage()">전송</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 교실 닫힘 -->
+        <div class="classroom-closed" id="classroomClosed" style="display: none;">
+            <h2>🚪 교실이 닫혔습니다</h2>
+            <p>선생님이 교실을 닫았습니다.<br>다시 입장하려면 새로고침 후 시도해주세요.</p>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket;
+        let currentClassroom = null;
+        let studentName = null;
+
+        // 소켓 연결 초기화
+        function initSocket() {
+            socket = io();
+
+            socket.on('connect', () => {
+                updateConnectionStatus(true);
+            });
+
+            socket.on('disconnect', () => {
+                updateConnectionStatus(false);
+            });
+
+            socket.on('joinResult', (data) => {
+                if (data.success) {
+                    currentClassroom = data.classroom;
+                    showChatArea();
+                    addSystemMessage(`${data.classroom.name} 교실에 입장했습니다.`);
+                    updateClassroomInfo();
+                } else {
+                    showError(data.message);
+                }
+            });
+
+            socket.on('newMessage', (data) => {
+                // 자신의 메시지인지 확인
+                const isOwn = data.sender === studentName;
+                // 선생님 메시지인지 확인 (role이 teacher이거나 sender가 '선생님'인 경우)
+                const isTeacher = data.role === 'teacher' || data.sender === '선생님';
+                
+                if (isTeacher) {
+                    addTeacherMessage(data.message, data.sender);
+                } else {
+                    addMessage(data.message, data.sender, isOwn);
+                }
+            });
+
+            socket.on('userJoined', (data) => {
+                addSystemMessage(`${data.name}님이 입장했습니다.`);
+            });
+
+            socket.on('userLeft', (data) => {
+                addSystemMessage(`${data.name}님이 퇴장했습니다.`);
+            });
+
+            socket.on('classroomClosed', () => {
+                showClassroomClosed();
+            });
+
+            socket.on('classroomOpened', () => {
+                hideClassroomClosed();
+            });
+        }
+
+        // 연결 상태 업데이트
+        function updateConnectionStatus(connected) {
+            const dot = document.getElementById('connectionDot');
+            const status = document.getElementById('connectionStatus');
+            
+            if (connected) {
+                dot.classList.add('connected');
+                status.textContent = '연결됨';
+            } else {
+                dot.classList.remove('connected');
+                status.textContent = '연결 끊김';
+            }
+        }
+
+        // 교실 정보 업데이트
+        function updateClassroomInfo() {
+            const info = document.getElementById('classroomInfo');
+            if (currentClassroom) {
+                info.textContent = `교실: ${currentClassroom.name} | 학생: ${studentName}`;
+            }
+        }
+
+        // 교실 입장
+        function joinClassroom() {
+            const nameInput = document.getElementById('studentName');
+            const classroomInput = document.getElementById('classroomId');
+            
+            const name = nameInput.value.trim();
+            const classroomId = classroomInput.value.trim();
+            
+            if (!name) {
+                showError('이름을 입력해주세요.');
+                return;
+            }
+            
+            if (!classroomId) {
+                showError('교실 코드를 입력해주세요.');
+                return;
+            }
+            
+            studentName = name;
+            clearError();
+            
+            socket.emit('joinClassroom', {
+                classroomId: classroomId,
+                name: name,
+                role: 'student'
+            });
+        }
+
+        // 메시지 전송
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            socket.emit('sendMessage', {
+                classroomId: currentClassroom.id,
+                message: message
+            });
+            
+            input.value = '';
+        }
+
+        // 메시지 추가 함수 개선
+        function addMessage(message, sender, isOwn) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+            
+            // 자신의 메시지인 경우 "나"로 표시, 다른 사람 메시지인 경우 실제 이름 표시
+            if (isOwn) {
+                const senderDiv = document.createElement('div');
+                senderDiv.className = 'message-sender';
+                senderDiv.textContent = '나';
+                messageDiv.appendChild(senderDiv);
+            } else if (sender) {
+                const senderDiv = document.createElement('div');
+                senderDiv.className = 'message-sender';
+                senderDiv.textContent = sender;
+                messageDiv.appendChild(senderDiv);
+            }
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.textContent = message;
+            messageDiv.appendChild(contentDiv);
+            
+            messagesDiv.appendChild(messageDiv);
+            
+            // 자동 스크롤을 맨 아래로
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // 시스템 메시지 추가
+        function addSystemMessage(message) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message system';
+            messageDiv.textContent = message;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // 선생님 메시지 추가 함수
+        function addTeacherMessage(message, sender) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message teacher';
+            
+            if (sender) {
+                const senderDiv = document.createElement('div');
+                senderDiv.className = 'message-sender';
+                senderDiv.textContent = sender;
+                messageDiv.appendChild(senderDiv);
+            }
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.textContent = message;
+            messageDiv.appendChild(contentDiv);
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // 채팅 영역 표시
+        function showChatArea() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('chatArea').style.display = 'flex';
+        }
+
+        // 교실 닫힘 표시
+        function showClassroomClosed() {
+            document.getElementById('chatArea').style.display = 'none';
+            document.getElementById('classroomClosed').style.display = 'block';
+        }
+
+        // 교실 닫힘 숨기기
+        function hideClassroomClosed() {
+            document.getElementById('classroomClosed').style.display = 'none';
+            document.getElementById('chatArea').style.display = 'flex';
+        }
+
+        // 에러 메시지 표시
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        // 에러 메시지 지우기
+        function clearError() {
+            document.getElementById('errorMessage').textContent = '';
+        }
+
+        // Enter 키로 메시지 전송
+        document.addEventListener('DOMContentLoaded', () => {
+            const messageInput = document.getElementById('messageInput');
+            const studentNameInput = document.getElementById('studentName');
+            const classroomIdInput = document.getElementById('classroomId');
+            
+            // 메시지 입력 키보드 이벤트 (Shift+Enter: 줄바꿈, Enter: 전송)
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    if (e.shiftKey) {
+                        // Shift+Enter: 줄바꿈 허용 (기본 동작)
+                        return;
+                    } else {
+                        // Enter: 메시지 전송
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                }
+            });
+            
+            studentNameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('classroomId').focus();
+                }
+            });
+            
+            classroomIdInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    joinClassroom();
+                }
+            });
+            
+            initSocket();
+        });
+    </script>
+</body>
+</html>
